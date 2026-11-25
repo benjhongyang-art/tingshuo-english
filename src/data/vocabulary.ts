@@ -1,4 +1,5 @@
 import type { Lesson } from "../types.ts"
+import { extraVocabulary } from "./extra-vocabulary.ts"
 import { lessons } from "./lessons.ts"
 
 export type VocabCard = {
@@ -46,6 +47,7 @@ export const vocabulary: VocabCard[] = [
   { id: "work:email", topicId: "work", word: "email", zh: "電子郵件", ipa: "/ˈimeɪl/", example: "I'll send you an email." },
   { id: "work:report", topicId: "work", word: "report", zh: "報告", ipa: "/rɪˈpɔrt/", example: "The report is ready." },
   { id: "work:break", topicId: "work", word: "break", zh: "休息", ipa: "/breɪk/", example: "Let's take a break." },
+  ...extraVocabulary,
 ]
 
 const byId = new Map(vocabulary.map((card) => [card.id, card]))

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { Mic, Send, Settings, Volume2 } from "lucide-react"
 import { BackHeader } from "@/components/practice-shell.tsx"
 import { Button } from "@/components/ui/button.tsx"
+import { recordPractice } from "@/lib/activity-store.ts"
 import { requestTutorReply, type AiErrorCode } from "@/lib/ai-client.ts"
 import {
   buildTutorMessages,
@@ -14,9 +15,11 @@ import {
 } from "@/lib/ai-prompt.ts"
 import { hasApiKey, loadAiSettings, saveAiSettings, type AiSettings } from "@/lib/ai-settings.ts"
 import { chatPhraseTarget, mistakeId } from "@/lib/mistakes.ts"
+import { calendarDay } from "@/lib/progress.ts"
 import { useProgress } from "@/lib/progress-context.tsx"
 import { useReview } from "@/lib/review-context.tsx"
 import { useEnglishSpeech, usePronunciationRecognizer } from "@/lib/speech.ts"
+import { useStudyTimer } from "@/lib/study-timer.ts"
 import { useRate } from "@/lib/use-rate.ts"
 import { cn } from "cn"
 import { Segmented } from "@/components/segmented.tsx"
@@ -60,7 +63,9 @@ export function AiChatScreen() {
   const [rate, setRate] = useRate()
   const speech = useEnglishSpeech()
   const recognizer = usePronunciationRecognizer()
+  const [online, setOnline] = useState(() => (typeof navigator === "undefined" ? true : navigator.onLine !== false))
   const requestId = useRef(0)
+  useStudyTimer()
   const pendingRef = useRef(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const scenario = scenarioById(settings.scenarioId)
@@ -68,6 +73,16 @@ export function AiChatScreen() {
 
   useEffect(() => {
     document.title = "英文對話 — 聽說"
+  }, [])
+
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine !== false)
+    window.addEventListener("online", update)
+    window.addEventListener("offline", update)
+    return () => {
+      window.removeEventListener("online", update)
+      window.removeEventListener("offline", update)
+    }
   }, [])
 
   useEffect(() => {
@@ -106,7 +121,10 @@ export function AiChatScreen() {
     const current = loadAiSettings()
     setSettings(current)
     const history = mode === "retry" ? messages : [...messages, userBubble(spoken)]
-    if (mode === "new") setMessages(history)
+    if (mode === "new") {
+      setMessages(history)
+      recordPractice(calendarDay(new Date()), { items: 1 })
+    }
     setDraft("")
     setError(null)
     setPending(true)
@@ -239,6 +257,12 @@ export function AiChatScreen() {
           onClick={() => persist({ ...settings, autoSpeak: !settings.autoSpeak })}
         />
       </div>
+
+      {!online && (
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950" role="status">
+          目前沒有網路，無法進行英文對話。請連上網路後再試。聽力、發音、單字、文法、閱讀和錯題本都可以離線使用。
+        </div>
+      )}
 
       {!hasApiKey(settings) && (
         <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950" role="status">

@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button.tsx"
+import { useStudyTimer } from "@/lib/study-timer.ts"
 
 export function PracticeShell({
   title,
@@ -19,6 +20,7 @@ export function PracticeShell({
   children: ReactNode
 }) {
   const navigate = useNavigate()
+  useStudyTimer()
   const width = total === 0 ? 0 : Math.min(100, Math.round((step / total) * 100))
 
   return (

@@ -1,11 +1,13 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react"
 import { getVocabCard, vocabIds } from "../data/vocabulary.ts"
+import { recordPractice, snapshotMistakeCount } from "./activity-store.ts"
 import {
   collectChatPhrase,
   mistakeCount,
   recordCardOutcome,
   recordGrammarOutcome,
   recordListenOutcome,
+  recordReadingOutcome,
   recordSpeakOutcome,
   removeMistake,
   type MistakeBook,
@@ -26,6 +28,7 @@ type ReviewApi = {
   noteListen: (target: MistakeTarget, correct: boolean) => void
   noteSpeak: (target: MistakeTarget, score: number) => void
   noteGrammar: (target: MistakeTarget, correct: boolean) => void
+  noteReading: (target: MistakeTarget, correct: boolean) => void
   addChatPhrase: (target: MistakeTarget) => void
   dismissMistake: (id: string) => void
 }
@@ -37,6 +40,10 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
   const [schedules, setSchedules] = useState<Record<string, CardSchedule>>(() => loadSchedules())
   const [mistakes, setMistakes] = useState<MistakeBook>(() => loadMistakes())
   const [today] = useState(() => calendarDay(new Date()))
+
+  useEffect(() => {
+    snapshotMistakeCount(calendarDay(new Date()), mistakes.items.length)
+  }, [mistakes])
 
   const changeBook = useCallback((change: (prev: MistakeBook) => MistakeBook) => {
     setMistakes((prev) => {
@@ -57,6 +64,7 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
       saveSchedules(next)
       return next
     })
+    recordPractice(day, { cardsReviewed: 1, items: 1 })
     changeBook((prev) => {
       return recordCardOutcome(
         prev,
@@ -102,6 +110,14 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
     [changeBook],
   )
 
+  const noteReading = useCallback(
+    (target: MistakeTarget, correct: boolean) => {
+      const day = calendarDay(new Date())
+      changeBook((prev) => recordReadingOutcome(prev, target, correct, day).book)
+    },
+    [changeBook],
+  )
+
   const addChatPhrase = useCallback(
     (target: MistakeTarget) => {
       const day = calendarDay(new Date())
@@ -128,10 +144,11 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
       noteListen,
       noteSpeak,
       noteGrammar,
+      noteReading,
       addChatPhrase,
       dismissMistake,
     }
-  }, [addChatPhrase, dismissMistake, mistakes, noteGrammar, noteListen, noteSpeak, reviewCard, schedules, today])
+  }, [addChatPhrase, dismissMistake, mistakes, noteGrammar, noteListen, noteReading, noteSpeak, reviewCard, schedules, today])
 
   return <ReviewContext.Provider value={api}>{children}</ReviewContext.Provider>
 }

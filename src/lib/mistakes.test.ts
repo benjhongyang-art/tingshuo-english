@@ -11,6 +11,7 @@ import {
   recordCardOutcome,
   recordGrammarOutcome,
   recordListenOutcome,
+  recordReadingOutcome,
   recordSpeakOutcome,
   removeMistake,
   SPEAK_MASTERY_THRESHOLD,
@@ -202,5 +203,38 @@ describe("mistake collection", () => {
     expect(collectChatPhrase(book, target, today)).toBe(book)
     expect(listMistakes(book, { source: "chat" })).toHaveLength(1)
     expect(listMistakes(book, { source: "grammar" })).toHaveLength(0)
+  })
+
+  it("collects a wrong reading answer and clears it after three correct reviews", () => {
+    const target: MistakeTarget = {
+      kind: "phrase",
+      topicId: "reading-market",
+      refId: "q1",
+      en: "Mei goes to the market on Saturday morning.",
+      zh: "Mei 星期六早上去市場。",
+      ipa: "",
+      note: "題目：Mei 什麼時候去市場？　你的答案：星期日晚上",
+    }
+    const empty = emptyMistakeBook()
+    expect(recordReadingOutcome(empty, target, true, today).book).toBe(empty)
+    let book = recordReadingOutcome(emptyMistakeBook(), target, false, today).book
+    expect(book.items[0]).toMatchObject({
+      sources: ["reading"],
+      kind: "phrase",
+      wrongCount: 1,
+      correctStreak: 0,
+    })
+    book = recordReadingOutcome(book, target, false, today).book
+    expect(book.items[0]?.wrongCount).toBe(2)
+    expect(book.items[0]?.sources).toEqual(["reading"])
+    for (let index = 0; index < MASTERY_STREAK - 1; index += 1) {
+      const step = recordReadingOutcome(book, target, true, today)
+      expect(step.mastered).toBe(false)
+      book = step.book
+    }
+    const last = recordReadingOutcome(book, target, true, today)
+    expect(last.mastered).toBe(true)
+    expect(mistakeCount(last.book)).toBe(0)
+    expect(listMistakes(book, { source: "reading" })).toHaveLength(1)
   })
 })

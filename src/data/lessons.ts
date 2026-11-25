@@ -1,4 +1,5 @@
 import type { Lesson } from "../types.ts"
+import { extraLessons } from "./extra-lessons.ts"
 
 export const lessons: Lesson[] = [
   {
@@ -93,6 +94,7 @@ export const lessons: Lesson[] = [
       { id: "w15", en: "Nice working with you.", zh: "跟你一起工作很愉快。", ipa: "/ˈnaɪs ˈwɝkɪŋ wɪð ju/" },
     ],
   },
+  ...extraLessons,
 ]
 
 export function getLesson(id: string | undefined): Lesson | undefined {

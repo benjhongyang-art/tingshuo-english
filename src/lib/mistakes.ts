@@ -1,6 +1,6 @@
 import type { ReviewRating } from "./srs.ts"
 
-export const MISTAKE_SOURCES = ["listen", "speak", "card", "grammar", "chat"] as const
+export const MISTAKE_SOURCES = ["listen", "speak", "card", "grammar", "chat", "reading"] as const
 
 export type MistakeSource = (typeof MISTAKE_SOURCES)[number]
 
@@ -153,6 +153,17 @@ export function recordSpeakOutcome(
   if (safe < SPEAK_MISTAKE_THRESHOLD) return { book: markWrong(book, target, "speak", today), mastered: false }
   if (safe >= SPEAK_MASTERY_THRESHOLD) return markCorrect(book, target, today)
   return { book, mastered: false }
+}
+
+export function recordReadingOutcome(
+  book: MistakeBook,
+  target: MistakeTarget,
+  correct: boolean,
+  today: string,
+): MistakeResult {
+  const phrase: MistakeTarget = { ...target, kind: "phrase", ipa: target.ipa ?? "" }
+  if (!correct) return { book: markWrong(book, phrase, "reading", today), mastered: false }
+  return markCorrect(book, phrase, today)
 }
 
 export function recordGrammarOutcome(

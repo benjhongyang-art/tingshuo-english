@@ -2,7 +2,7 @@ export type SpeechRate = "slow" | "normal"
 
 export type ListenMode = "choice" | "dictation"
 
-export type LessonTone = "amber" | "orange" | "sky" | "teal"
+export type LessonTone = "amber" | "orange" | "sky" | "teal" | "rose" | "violet" | "emerald" | "cyan" | "indigo" | "lime"
 
 export type LessonItem = {
   id: string
