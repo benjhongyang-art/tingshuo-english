@@ -1,0 +1,20 @@
+import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { HomeScreen } from "@/components/home-screen.tsx"
+import { ListeningPractice } from "@/components/listening-practice.tsx"
+import { PronunciationPractice } from "@/components/pronunciation-practice.tsx"
+import { ProgressProvider } from "@/lib/progress-context.tsx"
+
+export default function App() {
+  return (
+    <ProgressProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomeScreen />} />
+          <Route path="/listen/:lessonId" element={<ListeningPractice />} />
+          <Route path="/speak/:lessonId" element={<PronunciationPractice />} />
+          <Route path="*" element={<HomeScreen />} />
+        </Routes>
+      </BrowserRouter>
+    </ProgressProvider>
+  )
+}
