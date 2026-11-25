@@ -9,7 +9,9 @@ import { WordMarks } from "@/components/word-marks.tsx"
 import { getLesson, itemKey } from "@/data/lessons.ts"
 import { buildChoices } from "@/lib/choices.ts"
 import { choiceFeedback, dictationFeedback, roundFeedback } from "@/lib/feedback.ts"
+import type { MistakeTarget } from "@/lib/mistakes.ts"
 import { useProgress } from "@/lib/progress-context.tsx"
+import { useReview } from "@/lib/review-context.tsx"
 import { assessUtterance, type Assessment } from "@/lib/score.ts"
 import { hasHeardModel, markHeardModel, useEnglishSpeech } from "@/lib/speech.ts"
 import { saveLast } from "@/lib/storage.ts"
@@ -64,8 +66,18 @@ export function ListeningPractice() {
       ) : (
         <ListenQuestion
           key={`${lesson.id}:${item.id}`}
-          lesson={lesson}
           item={item}
+          progressKey={itemKey(lesson.id, item.id)}
+          pool={lesson.items.map((entry) => entry.en)}
+          seed={`${lesson.id}:${item.id}`}
+          track={{
+            kind: "lesson",
+            topicId: lesson.id,
+            refId: item.id,
+            en: item.en,
+            zh: item.zh,
+            ipa: item.ipa,
+          }}
           mode={mode}
           onMode={setMode}
           rate={rate}
@@ -87,9 +99,12 @@ export function ListeningPractice() {
   )
 }
 
-function ListenQuestion({
-  lesson,
+export function ListenQuestion({
   item,
+  progressKey,
+  pool,
+  seed,
+  track,
   mode,
   onMode,
   rate,
@@ -97,9 +112,13 @@ function ListenQuestion({
   isLast,
   onAnswered,
   onNext,
+  recordProgress = true,
 }: {
-  lesson: Lesson
   item: LessonItem
+  progressKey: string
+  pool: string[]
+  seed: string
+  track: MistakeTarget
   mode: ListenMode
   onMode: (mode: ListenMode) => void
   rate: "slow" | "normal"
@@ -107,8 +126,10 @@ function ListenQuestion({
   isLast: boolean
   onAnswered: (correct: boolean) => void
   onNext: () => void
+  recordProgress?: boolean
 }) {
   const { recordListen } = useProgress()
+  const { noteListen } = useReview()
   const { speak, stop, speaking, supported, problem } = useEnglishSpeech()
   const locked = useRef(false)
   const [picked, setPicked] = useState<string | null>(null)
@@ -122,15 +143,7 @@ function ListenQuestion({
     setTyped("")
     setDraftError("")
   }
-  const choices = useMemo(
-    () =>
-      buildChoices(
-        item.en,
-        lesson.items.map((entry) => entry.en),
-        `${lesson.id}:${item.id}`,
-      ),
-    [item.en, item.id, lesson.id, lesson.items],
-  )
+  const choices = useMemo(() => buildChoices(item.en, pool, seed), [item.en, pool, seed])
 
   useEffect(() => {
     if (!supported || !hasHeardModel()) return
@@ -152,7 +165,8 @@ function ListenQuestion({
     locked.current = true
     setAssessment(nextAssessment)
     setPhase("reveal")
-    recordListen(itemKey(lesson.id, item.id), correct)
+    if (recordProgress) recordListen(progressKey, correct)
+    noteListen(track, correct)
     onAnswered(correct)
     speak(item.en, rate, "auto")
   }

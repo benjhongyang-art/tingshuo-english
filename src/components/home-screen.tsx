@@ -1,10 +1,11 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Briefcase, Flame, Mic, Plane, SunMedium, Utensils, Volume2 } from "lucide-react"
+import { BookOpen, Briefcase, Flame, Layers, Mic, Plane, SunMedium, Utensils, Volume2 } from "lucide-react"
 import { Button } from "@/components/ui/button.tsx"
 import { lessons, itemKey, getLesson, totalItemCount } from "@/data/lessons.ts"
 import { countPracticed } from "@/lib/progress.ts"
 import { useProgress } from "@/lib/progress-context.tsx"
+import { useReview } from "@/lib/review-context.tsx"
 import { canRecognizeSpeech } from "@/lib/speech.ts"
 import { loadLast } from "@/lib/storage.ts"
 import type { Lesson, LessonTone } from "@/types.ts"
@@ -27,6 +28,7 @@ const lessonIcon = {
 export function HomeScreen() {
   const navigate = useNavigate()
   const { state, summary } = useProgress()
+  const { due, mistakeCount } = useReview()
   const recognition = canRecognizeSpeech()
   const last = loadLast()
   const lastLesson = last ? getLesson(last.lessonId) : undefined
@@ -72,6 +74,45 @@ export function HomeScreen() {
             繼續：{lastLesson.title} · {last.mode === "listen" ? "聽力" : "發音"}
           </Button>
         )}
+      </section>
+
+      <section className="mt-4 grid gap-3 sm:grid-cols-2" aria-label="複習">
+        <button
+          type="button"
+          onClick={() => navigate("/cards")}
+          className="rounded-[1.6rem] border bg-card p-4 text-left shadow-sm"
+        >
+          <span className="flex items-center gap-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+              <Layers className="size-6" />
+            </span>
+            <span>
+              <span className="block text-lg font-semibold">單字閃卡</span>
+              <span className="mt-1 block font-display text-3xl leading-none">{due.due}</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {due.due === 0 ? "今天都複習完了" : "今日待複習"}
+              </span>
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/mistakes")}
+          className="rounded-[1.6rem] border bg-card p-4 text-left shadow-sm"
+        >
+          <span className="flex items-center gap-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-orange-100 text-orange-900">
+              <BookOpen className="size-6" />
+            </span>
+            <span>
+              <span className="block text-lg font-semibold">錯題本</span>
+              <span className="mt-1 block font-display text-3xl leading-none">{mistakeCount}</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {mistakeCount === 0 ? "目前沒有錯題" : "則待加強"}
+              </span>
+            </span>
+          </span>
+        </button>
       </section>
 
       <section className="mt-4 grid grid-cols-3 gap-2 sm:gap-3" aria-label="練習進度">
