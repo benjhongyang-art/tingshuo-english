@@ -7,7 +7,9 @@ import { Segmented } from "@/components/segmented.tsx"
 import { WordMarks } from "@/components/word-marks.tsx"
 import { getLesson, itemKey } from "@/data/lessons.ts"
 import { speakFeedback, speakRoundFeedback } from "@/lib/feedback.ts"
+import type { MistakeTarget } from "@/lib/mistakes.ts"
 import { useProgress } from "@/lib/progress-context.tsx"
+import { useReview } from "@/lib/review-context.tsx"
 import { assessUtterance, type Assessment } from "@/lib/score.ts"
 import {
   hasHeardModel,
@@ -65,8 +67,16 @@ export function PronunciationPractice() {
       ) : (
         <SpeakQuestion
           key={`${lesson.id}:${item.id}`}
-          lesson={lesson}
           item={item}
+          progressKey={itemKey(lesson.id, item.id)}
+          track={{
+            kind: "lesson",
+            topicId: lesson.id,
+            refId: item.id,
+            en: item.en,
+            zh: item.zh,
+            ipa: item.ipa,
+          }}
           rate={rate}
           onRate={setRate}
           isLast={index + 1 >= lesson.items.length}
@@ -81,24 +91,29 @@ export function PronunciationPractice() {
   )
 }
 
-function SpeakQuestion({
-  lesson,
+export function SpeakQuestion({
   item,
+  progressKey,
+  track,
   rate,
   onRate,
   isLast,
   onScored,
   onNext,
+  recordProgress = true,
 }: {
-  lesson: Lesson
   item: LessonItem
+  progressKey: string
+  track: MistakeTarget
   rate: "slow" | "normal"
   onRate: (rate: "slow" | "normal") => void
   isLast: boolean
   onScored: (score: number) => void
   onNext: () => void
+  recordProgress?: boolean
 }) {
   const { recordSpeak } = useProgress()
+  const { noteSpeak } = useReview()
   const { speak, stop, speaking, supported, problem } = useEnglishSpeech()
   const rec = usePronunciationRecognizer()
   const [attempt, setAttempt] = useState<{ text: string; result: Assessment } | null>(null)
@@ -129,7 +144,8 @@ function SpeakQuestion({
     rec.start((text) => {
       const result = assessUtterance(item.en, text)
       setAttempt({ text, result })
-      recordSpeak(itemKey(lesson.id, item.id), result.score)
+      if (recordProgress) recordSpeak(progressKey, result.score)
+      noteSpeak(track, result.score)
       onScored(result.score)
     })
   }

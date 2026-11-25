@@ -7,11 +7,15 @@ export function PracticeShell({
   title,
   step,
   total,
+  backTo = "/",
+  backLabel = "回到首頁",
   children,
 }: {
   title: string
   step: number
   total: number
+  backTo?: string
+  backLabel?: string
   children: ReactNode
 }) {
   const navigate = useNavigate()
@@ -25,8 +29,8 @@ export function PracticeShell({
           variant="outline"
           size="icon-lg"
           className="size-11 rounded-full bg-card"
-          aria-label="回到首頁"
-          onClick={() => navigate("/")}
+          aria-label={backLabel}
+          onClick={() => navigate(backTo)}
         >
           <ArrowLeft className="size-5" />
         </Button>
@@ -49,6 +53,36 @@ export function PracticeShell({
       </div>
       <div className="mt-4 flex flex-1 flex-col">{children}</div>
     </div>
+  )
+}
+
+export function BackHeader({
+  title,
+  detail,
+  to = "/",
+}: {
+  title: string
+  detail?: string
+  to?: string
+}) {
+  const navigate = useNavigate()
+  return (
+    <header className="flex items-center gap-3">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon-lg"
+        className="size-11 rounded-full bg-card"
+        aria-label="返回"
+        onClick={() => navigate(to)}
+      >
+        <ArrowLeft className="size-5" />
+      </Button>
+      <div className="min-w-0 flex-1">
+        <h1 className="truncate text-lg font-semibold">{title}</h1>
+        {detail && <p className="truncate text-sm text-muted-foreground">{detail}</p>}
+      </div>
+    </header>
   )
 }
 

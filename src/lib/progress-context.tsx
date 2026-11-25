@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
-import { calendarDay, recordListen, recordSpeak, summarize, type ProgressState } from "./progress.ts"
+import { calendarDay, markPracticed, recordListen, recordSpeak, summarize, type ProgressState } from "./progress.ts"
 import { loadProgress, saveProgress } from "./storage.ts"
 
 type ProgressApi = {
@@ -7,6 +7,7 @@ type ProgressApi = {
   summary: ReturnType<typeof summarize>
   recordListen: (itemId: string, correct: boolean) => void
   recordSpeak: (itemId: string, score: number) => void
+  markToday: () => void
 }
 
 const ProgressContext = createContext<ProgressApi | null>(null)
@@ -22,6 +23,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const markToday = useCallback(() => {
+    update((prev) => markPracticed(prev, calendarDay(new Date())))
+  }, [update])
+
   const api = useMemo<ProgressApi>(() => {
     const today = () => calendarDay(new Date())
     return {
@@ -29,8 +34,9 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
       summary: summarize(state),
       recordListen: (itemId, correct) => update((prev) => recordListen(prev, itemId, correct, today())),
       recordSpeak: (itemId, score) => update((prev) => recordSpeak(prev, itemId, score, today())),
+      markToday,
     }
-  }, [state, update])
+  }, [markToday, state, update])
 
   return <ProgressContext.Provider value={api}>{children}</ProgressContext.Provider>
 }
