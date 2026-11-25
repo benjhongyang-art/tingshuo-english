@@ -2,6 +2,8 @@
 
 給繁體中文使用者的英文聽力與發音練習。介面是繁體中文，練習內容是日常英文短句。不需要帳號，也不需要後端。
 
+線上版：[https://benjhongyang-art.github.io/tingshuo-english/](https://benjhongyang-art.github.io/tingshuo-english/)。推送到 `main` 後，GitHub Actions 會建置並發佈到 GitHub Pages（倉庫設定的 Pages 來源需為 **GitHub Actions**）。
+
 ## 可以做什麼
 
 - **聽力**：用瀏覽器朗讀英文，速度可切「慢速 / 正常」。可以用選擇題作答，或自己聽寫。答完會顯示正確句子、音標和中文意思。
@@ -22,7 +24,7 @@ npm install
 npm run dev
 ```
 
-開發伺服器是 [http://127.0.0.1:43127](http://127.0.0.1:43127)。
+開發伺服器是 [http://127.0.0.1:43127/tingshuo-english/](http://127.0.0.1:43127/tingshuo-english/)。本機與正式環境都掛在 `/tingshuo-english/` 底下，和 GitHub Pages 的網址一致。
 
 ## 測試與建置
 
