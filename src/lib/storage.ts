@@ -1,9 +1,13 @@
 import { vocabIds } from "../data/vocabulary.ts"
 import type { PracticeMode, SpeechRate } from "../types.ts"
+import { emptyGrammarStats, parseGrammarStats, type GrammarStats } from "./grammar.ts"
 import {
   emptyMistakeBook,
+  MISTAKE_KINDS,
+  MISTAKE_SOURCES,
   type MistakeBook,
   type MistakeEntry,
+  type MistakeKind,
   type MistakeSource,
 } from "./mistakes.ts"
 import { calendarDay, emptyProgress, type ItemStat, type ProgressState } from "./progress.ts"
@@ -14,9 +18,9 @@ const LAST_KEY = "tingshuo.last"
 const RATE_KEY = "tingshuo.rate"
 const SCHEDULE_KEY = "tingshuo.vocab.v1"
 const MISTAKE_KEY = "tingshuo.mistakes.v1"
+const GRAMMAR_KEY = "tingshuo.grammar.v1"
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/
-const SOURCES: MistakeSource[] = ["listen", "speak", "card"]
 
 export type LastSession = {
   lessonId: string
@@ -188,17 +192,21 @@ function extractMistakeItems(raw: unknown): unknown[] {
   return []
 }
 
+function isMistakeKind(value: unknown): value is MistakeKind {
+  return typeof value === "string" && (MISTAKE_KINDS as readonly string[]).includes(value)
+}
+
 function parseMistake(value: unknown): MistakeEntry | null {
   if (!value || typeof value !== "object") return null
   const raw = value as Partial<MistakeEntry>
-  if (raw.kind !== "lesson" && raw.kind !== "card") return null
+  if (!isMistakeKind(raw.kind)) return null
   if (typeof raw.topicId !== "string" || typeof raw.refId !== "string") return null
   if (typeof raw.en !== "string" || raw.en.trim() === "") return null
   if (typeof raw.zh !== "string" || typeof raw.ipa !== "string") return null
   const sources = Array.isArray(raw.sources)
-    ? SOURCES.filter((source) => raw.sources?.includes(source))
+    ? MISTAKE_SOURCES.filter((source) => raw.sources?.includes(source))
     : []
-  const fallback: MistakeSource[] = raw.kind === "card" ? ["card"] : ["listen"]
+  const fallback: MistakeSource[] = raw.kind === "card" ? ["card"] : raw.kind === "phrase" ? ["chat"] : ["listen"]
   const wrongCount = Math.max(0, Math.round(finiteNumber(raw.wrongCount, 1)))
   const correctStreak = Math.max(0, Math.round(finiteNumber(raw.correctStreak, 0)))
   return {
@@ -229,4 +237,18 @@ export function loadMistakes(): MistakeBook {
 
 export function saveMistakes(book: MistakeBook): void {
   write(MISTAKE_KEY, JSON.stringify({ version: 1, items: book.items }))
+}
+
+export function loadGrammarStats(): GrammarStats {
+  const raw = read(GRAMMAR_KEY)
+  if (!raw) return emptyGrammarStats()
+  try {
+    return parseGrammarStats(JSON.parse(raw))
+  } catch {
+    return emptyGrammarStats()
+  }
+}
+
+export function saveGrammarStats(stats: GrammarStats): void {
+  write(GRAMMAR_KEY, JSON.stringify({ version: 1, topics: stats.topics }))
 }

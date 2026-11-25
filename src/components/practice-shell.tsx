@@ -60,10 +60,12 @@ export function BackHeader({
   title,
   detail,
   to = "/",
+  extra,
 }: {
   title: string
   detail?: string
   to?: string
+  extra?: ReactNode
 }) {
   const navigate = useNavigate()
   return (
@@ -82,6 +84,7 @@ export function BackHeader({
         <h1 className="truncate text-lg font-semibold">{title}</h1>
         {detail && <p className="truncate text-sm text-muted-foreground">{detail}</p>}
       </div>
+      {extra}
     </header>
   )
 }

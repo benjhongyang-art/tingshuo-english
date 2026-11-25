@@ -1,12 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
+import { emptyGrammarStats, recordGrammarAttempt } from "./grammar.ts"
 import { calendarDay } from "./progress.ts"
 import {
+  loadGrammarStats,
   loadMistakes,
   loadProgress,
   loadSchedules,
   parseMistakeBook,
   parseProgress,
   parseSchedules,
+  saveGrammarStats,
   saveMistakes,
   saveProgress,
   saveSchedules,
@@ -168,6 +171,64 @@ describe("vocab and mistake migration", () => {
     expect(loadMistakes()).toEqual(book)
     expect(loadProgress().streak).toBe(1)
     expect(JSON.parse(mem.get("tingshuo.mistakes.v1") ?? "{}").version).toBe(1)
+  })
+
+  it("stores grammar stats beside an existing progress record", () => {
+    const mem = installStorage()
+    const original = {
+      streak: 3,
+      lastPracticeDate: "2026-11-24",
+      items: {
+        "greetings:g01": { listenAttempts: 2, listenCorrect: 1, speakAttempts: 0, speakBest: 0 },
+      },
+    }
+    mem.set("tingshuo.progress.v1", JSON.stringify(original))
+    saveGrammarStats(recordGrammarAttempt(emptyGrammarStats(), "tenses", false))
+
+    expect(loadProgress()).toEqual(original)
+    expect(loadGrammarStats().topics.tenses).toEqual({ attempts: 1, correct: 0 })
+    expect(JSON.parse(mem.get("tingshuo.progress.v1") ?? "{}")).not.toHaveProperty("grammar")
+    expect(JSON.parse(mem.get("tingshuo.grammar.v1") ?? "{}").version).toBe(1)
+
+    mem.set("tingshuo.grammar.v1", "{")
+    expect(loadGrammarStats()).toEqual({ topics: {} })
+    expect(loadProgress().streak).toBe(3)
+  })
+
+  it("keeps a lesson mistake when a grammar phrase is stored in the same book", () => {
+    const book = parseMistakeBook({
+      version: 1,
+      items: [
+        {
+          id: "lesson:greetings:g01",
+          sources: ["listen"],
+          topicId: "greetings",
+          kind: "lesson",
+          refId: "g01",
+          en: "Hello.",
+          zh: "你好。",
+          ipa: "/həˈloʊ/",
+          wrongCount: 1,
+          correctStreak: 0,
+          updatedAt: "2026-11-25",
+        },
+        {
+          kind: "phrase",
+          topicId: "tenses",
+          refId: "tenses-01",
+          sources: ["grammar", "nope"],
+          en: "I drink coffee every morning.",
+          zh: "用原形。",
+          ipa: "",
+          note: "題目",
+          wrongCount: 1,
+          correctStreak: 0,
+          updatedAt: "2026-11-25",
+        },
+      ],
+    })
+    expect(book.items.map((item) => item.sources)).toEqual([["listen"], ["grammar"]])
+    expect(book.items[1]?.kind).toBe("phrase")
   })
 
   it("uses today when a stored due date is repaired through loadSchedules", () => {

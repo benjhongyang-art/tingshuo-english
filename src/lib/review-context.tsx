@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
 import { getVocabCard, vocabIds } from "../data/vocabulary.ts"
 import {
+  collectChatPhrase,
   mistakeCount,
   recordCardOutcome,
+  recordGrammarOutcome,
   recordListenOutcome,
   recordSpeakOutcome,
   removeMistake,
@@ -23,6 +25,8 @@ type ReviewApi = {
   reviewCard: (cardId: string, rating: ReviewRating) => void
   noteListen: (target: MistakeTarget, correct: boolean) => void
   noteSpeak: (target: MistakeTarget, score: number) => void
+  noteGrammar: (target: MistakeTarget, correct: boolean) => void
+  addChatPhrase: (target: MistakeTarget) => void
   dismissMistake: (id: string) => void
 }
 
@@ -90,6 +94,22 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
     [changeBook, markToday],
   )
 
+  const noteGrammar = useCallback(
+    (target: MistakeTarget, correct: boolean) => {
+      const day = calendarDay(new Date())
+      changeBook((prev) => recordGrammarOutcome(prev, target, correct, day).book)
+    },
+    [changeBook],
+  )
+
+  const addChatPhrase = useCallback(
+    (target: MistakeTarget) => {
+      const day = calendarDay(new Date())
+      changeBook((prev) => collectChatPhrase(prev, target, day))
+    },
+    [changeBook],
+  )
+
   const dismissMistake = useCallback(
     (id: string) => {
       changeBook((prev) => removeMistake(prev, id))
@@ -107,9 +127,11 @@ export function ReviewProvider({ children }: { children: ReactNode }) {
       reviewCard,
       noteListen,
       noteSpeak,
+      noteGrammar,
+      addChatPhrase,
       dismissMistake,
     }
-  }, [dismissMistake, mistakes, noteListen, noteSpeak, reviewCard, schedules, today])
+  }, [addChatPhrase, dismissMistake, mistakes, noteGrammar, noteListen, noteSpeak, reviewCard, schedules, today])
 
   return <ReviewContext.Provider value={api}>{children}</ReviewContext.Provider>
 }

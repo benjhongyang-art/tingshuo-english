@@ -7,7 +7,7 @@ import { SpeakQuestion } from "@/components/pronunciation-practice.tsx"
 import { getLesson, itemKey } from "@/data/lessons.ts"
 import { vocabulary } from "@/data/vocabulary.ts"
 import { roundFeedback, speakRoundFeedback } from "@/lib/feedback.ts"
-import { listMistakes, type MistakeEntry, type MistakeSource, type MistakeTarget } from "@/lib/mistakes.ts"
+import { listMistakes, parseMistakeSource, type MistakeEntry, type MistakeTarget } from "@/lib/mistakes.ts"
 import { useReview } from "@/lib/review-context.tsx"
 import { useRate } from "@/lib/use-rate.ts"
 import type { LessonItem, ListenMode } from "@/types.ts"
@@ -19,11 +19,6 @@ type Slide = {
   track: MistakeTarget
 }
 
-function readSource(value: string | null): MistakeSource | "all" {
-  if (value === "listen" || value === "speak" || value === "card") return value
-  return "all"
-}
-
 function slideFrom(entry: MistakeEntry): Slide {
   const lesson = getLesson(entry.topicId)
   const pool =
@@ -31,7 +26,12 @@ function slideFrom(entry: MistakeEntry): Slide {
       ? vocabulary.filter((card) => card.topicId === entry.topicId).map((card) => card.word)
       : (lesson?.items.map((item) => item.en) ?? [entry.en])
   return {
-    progressKey: entry.kind === "lesson" ? itemKey(entry.topicId, entry.refId) : `card:${entry.refId}`,
+    progressKey:
+      entry.kind === "lesson"
+        ? itemKey(entry.topicId, entry.refId)
+        : entry.kind === "card"
+          ? `card:${entry.refId}`
+          : `phrase:${entry.topicId}:${entry.refId}`,
     pool: pool.includes(entry.en) ? pool : [entry.en, ...pool],
     item: {
       id: entry.refId,
@@ -59,7 +59,7 @@ export function MistakePractice() {
   const practiceMode = mode === "speak" ? "speak" : mode === "listen" ? "listen" : null
   const [slides] = useState<Slide[]>(() =>
     listMistakes(mistakes, {
-      source: readSource(params.get("source")),
+      source: parseMistakeSource(params.get("source")),
       topicId: params.get("topic") ?? "all",
       id: params.get("id") ?? undefined,
     }).map(slideFrom),
