@@ -13,6 +13,7 @@ export type AiErrorCode =
   | "bad-response"
   | "provider"
   | "billing"
+  | "offline"
   | "aborted"
 
 export type AiResult =
@@ -49,7 +50,9 @@ export function describeAiError(code: Exclude<AiErrorCode, "aborted">, status?: 
     case "rate-limit":
       return "請求太頻繁，請稍等一下再送出。費用是向你自己的 API 帳戶計費。"
     case "network":
-      return "連不上 API。請檢查網路，並確認這個服務允許從瀏覽器直接呼叫。"
+      return "連不上 API。請檢查網路。沒有網路時無法進行英文對話；聽力、發音、單字、文法、閱讀和錯題本可以離線使用。"
+    case "offline":
+      return "目前沒有網路，無法進行英文對話。請連上網路後再試。聽力、發音、單字、文法、閱讀和錯題本都可以離線使用。"
     case "bad-url":
       return "API 網址不正確。請填 http 或 https 開頭的網址。"
     case "billing":
@@ -116,6 +119,9 @@ export async function requestTutorReply(options: {
   fetchImpl?: typeof fetch
   signal?: AbortSignal
 }): Promise<AiResult> {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return { ok: false, code: "offline", message: describeAiError("offline") }
+  }
   const apiKey = options.settings.apiKey.trim()
   if (!apiKey) return { ok: false, code: "missing-key", message: describeAiError("missing-key") }
   const url = chatCompletionsUrl(options.settings.baseUrl)

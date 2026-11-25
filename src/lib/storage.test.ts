@@ -228,6 +228,26 @@ describe("vocab and mistake migration", () => {
       ],
     })
     expect(book.items.map((item) => item.sources)).toEqual([["listen"], ["grammar"]])
+
+    const withReading = parseMistakeBook({
+      version: 1,
+      items: [
+        {
+          id: "phrase:reading-market:q1",
+          sources: ["reading"],
+          topicId: "reading-market",
+          kind: "phrase",
+          refId: "q1",
+          en: "Mei goes to the market on Saturday morning.",
+          zh: "星期六早上。",
+          ipa: "",
+          wrongCount: 1,
+          correctStreak: 0,
+          updatedAt: "2026-11-25",
+        },
+      ],
+    })
+    expect(withReading.items[0]?.sources).toEqual(["reading"])
     expect(book.items[1]?.kind).toBe("phrase")
   })
 

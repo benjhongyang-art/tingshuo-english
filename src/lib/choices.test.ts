@@ -17,8 +17,9 @@ describe("buildChoices", () => {
 })
 
 describe("lessons", () => {
-  it("ships four topics with 15 items each", () => {
-    expect(lessons).toHaveLength(4)
+  it("ships every topic with 15 items each", () => {
+    expect(lessons).toHaveLength(10)
+    expect(lessons.map((lesson) => lesson.id)).toContain("shopping")
     for (const lesson of lessons) {
       expect(lesson.items).toHaveLength(15)
       expect(new Set(lesson.items.map((item) => item.id)).size).toBe(15)

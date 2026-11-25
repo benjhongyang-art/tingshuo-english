@@ -1,9 +1,36 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { BookOpen, Briefcase, Flame, Layers, MessageCircle, Mic, Plane, SpellCheck, SunMedium, Utensils, Volume2 } from "lucide-react"
+import {
+  BookOpen,
+  BookOpenText,
+  Briefcase,
+  ChartColumn,
+  CloudSun,
+  Flame,
+  GraduationCap,
+  HeartPulse,
+  Layers,
+  MessageCircle,
+  Mic,
+  Palette,
+  Plane,
+  ShoppingBag,
+  Smartphone,
+  SpellCheck,
+  SunMedium,
+  Utensils,
+  Volume2,
+  type LucideIcon,
+} from "lucide-react"
+import { GoalCard } from "@/components/goal-card.tsx"
+import { ThemeToggle } from "@/components/theme-toggle.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { lessons, itemKey, getLesson, totalItemCount } from "@/data/lessons.ts"
+import { loadActivity } from "@/lib/activity-store.ts"
+import { todayTotals } from "@/lib/activity.ts"
 import { useGrammar } from "@/lib/grammar-context.tsx"
+import { calendarDay } from "@/lib/progress.ts"
+import { useReading } from "@/lib/reading-context.tsx"
 import { countPracticed } from "@/lib/progress.ts"
 import { useProgress } from "@/lib/progress-context.tsx"
 import { useReview } from "@/lib/review-context.tsx"
@@ -17,19 +44,34 @@ const toneClass: Record<LessonTone, { icon: string; bar: string }> = {
   orange: { icon: "bg-orange-100 text-orange-900", bar: "bg-orange-600" },
   sky: { icon: "bg-sky-100 text-sky-900", bar: "bg-sky-700" },
   teal: { icon: "bg-teal-100 text-teal-900", bar: "bg-teal-700" },
+  rose: { icon: "bg-rose-100 text-rose-900", bar: "bg-rose-600" },
+  violet: { icon: "bg-violet-100 text-violet-900", bar: "bg-violet-600" },
+  emerald: { icon: "bg-emerald-100 text-emerald-900", bar: "bg-emerald-600" },
+  cyan: { icon: "bg-cyan-100 text-cyan-900", bar: "bg-cyan-700" },
+  indigo: { icon: "bg-indigo-100 text-indigo-900", bar: "bg-indigo-600" },
+  lime: { icon: "bg-lime-100 text-lime-900", bar: "bg-lime-700" },
 }
 
-const lessonIcon = {
+const lessonIcon: Record<string, LucideIcon> = {
   greetings: SunMedium,
   food: Utensils,
   travel: Plane,
   work: Briefcase,
+  shopping: ShoppingBag,
+  health: HeartPulse,
+  school: GraduationCap,
+  hobbies: Palette,
+  weather: CloudSun,
+  phone: Smartphone,
 }
 
 export function HomeScreen() {
   const navigate = useNavigate()
   const { state, summary } = useProgress()
   const { summary: grammarSummary } = useGrammar()
+  const { summary: readingSummary } = useReading()
+  const [today] = useState(() => calendarDay(new Date()))
+  const practicedToday = todayTotals(loadActivity(), today).items
   const { due, mistakeCount } = useReview()
   const recognition = canRecognizeSpeech()
   const last = loadLast()
@@ -42,13 +84,16 @@ export function HomeScreen() {
 
   return (
     <div className="mx-auto min-h-dvh w-full max-w-5xl px-4 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))] sm:px-6">
-      <header className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center gap-3">
         <span className="grid size-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
           <Volume2 className="size-6" />
         </span>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-semibold tracking-[0.16em] text-primary">LISTEN · SPEAK</p>
           <h1 className="font-display text-4xl leading-none">聽說</h1>
+        </div>
+        <div className="ml-auto">
+          <ThemeToggle />
         </div>
       </header>
 
@@ -77,6 +122,8 @@ export function HomeScreen() {
           </Button>
         )}
       </section>
+
+      <GoalCard />
 
       <section className="mt-4 grid gap-3 sm:grid-cols-2" aria-label="練習">
         <button
@@ -111,6 +158,40 @@ export function HomeScreen() {
               <span className="mt-1 block font-display text-3xl leading-none">{mistakeCount}</span>
               <span className="mt-1 block text-xs text-muted-foreground">
                 {mistakeCount === 0 ? "目前沒有錯題" : "則待加強"}
+              </span>
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/read")}
+          className="rounded-[1.6rem] border bg-card p-4 text-left shadow-sm"
+        >
+          <span className="flex items-center gap-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-indigo-100 text-indigo-900">
+              <BookOpenText className="size-6" />
+            </span>
+            <span>
+              <span className="block text-lg font-semibold">閱讀短文</span>
+              <span className="mt-1 block text-sm leading-6 text-muted-foreground">
+                點句子聽、點單字看中文，再做理解題。
+              </span>
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/stats")}
+          className="rounded-[1.6rem] border bg-card p-4 text-left shadow-sm"
+        >
+          <span className="flex items-center gap-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-violet-100 text-violet-900">
+              <ChartColumn className="size-6" />
+            </span>
+            <span>
+              <span className="block text-lg font-semibold">學習統計</span>
+              <span className="mt-1 block text-sm leading-6 text-muted-foreground">
+                近 7 天和 30 天的練習、正確率、閃卡和錯題。
               </span>
             </span>
           </span>
@@ -166,7 +247,7 @@ export function HomeScreen() {
         />
       </section>
 
-      {summary.practiced === 0 && grammarSummary.attempts === 0 && (
+      {summary.practiced === 0 && grammarSummary.attempts === 0 && readingSummary.attempts === 0 && practicedToday === 0 && (
         <p className="mt-3 rounded-2xl bg-card px-4 py-3 text-sm leading-6 text-muted-foreground shadow-sm">
           還沒有練習紀錄。挑一個主題，從第一句開始就好。
         </p>
@@ -178,7 +259,7 @@ export function HomeScreen() {
         </p>
       )}
 
-      <h2 className="mt-8 text-lg font-semibold">四個生活主題</h2>
+      <h2 className="mt-8 text-lg font-semibold">生活主題</h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {lessons.map((lesson) => (
           <LessonCard
@@ -222,7 +303,7 @@ function LessonCard({
   onSpeak: () => void
 }) {
   const tone = toneClass[lesson.tone]
-  const Icon = lessonIcon[lesson.id as keyof typeof lessonIcon] ?? SunMedium
+  const Icon = lessonIcon[lesson.id] ?? SunMedium
   const width = Math.round((practiced / lesson.items.length) * 100)
 
   return (

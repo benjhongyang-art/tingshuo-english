@@ -8,6 +8,7 @@ import { lessons } from "@/data/lessons.ts"
 import { topicTitle, vocabulary, type VocabCard } from "@/data/vocabulary.ts"
 import { useReview } from "@/lib/review-context.tsx"
 import { useEnglishSpeech } from "@/lib/speech.ts"
+import { useStudyTimer } from "@/lib/study-timer.ts"
 import { applyReview, dueCards, intervalLabel, newSchedule, nextDueDay, type ReviewRating } from "@/lib/srs.ts"
 import { useRate } from "@/lib/use-rate.ts"
 import { cn } from "cn"
@@ -25,6 +26,7 @@ export function Flashcards() {
   const [tally, setTally] = useState({ again: 0, hard: 0, good: 0 })
   const [rate, setRate] = useRate()
   const reviewed = tally.again + tally.hard + tally.good
+  useStudyTimer()
 
   const queue = useMemo(() => {
     const cards = topicId === "all" ? vocabulary : vocabulary.filter((card) => card.topicId === topicId)

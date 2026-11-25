@@ -146,7 +146,16 @@ describe("chat endpoint", () => {
     if (!network.ok) {
       expect(network.code).toBe("network")
       expect(network.message).not.toContain(secret)
+      expect(network.message).toContain("離線")
     }
+
+    vi.stubGlobal("navigator", { onLine: false })
+    const offlineFetch = vi.fn()
+    const offline = await requestTutorReply({ settings: settings(), messages: [], fetchImpl: offlineFetch })
+    expect(offlineFetch).not.toHaveBeenCalled()
+    expect(offline).toMatchObject({ ok: false, code: "offline" })
+    if (!offline.ok) expect(offline.message).toContain("目前沒有網路")
+    vi.unstubAllGlobals()
 
     const leaked = await requestTutorReply({
       settings: settings(),

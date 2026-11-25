@@ -4,6 +4,7 @@ import { BackHeader } from "@/components/practice-shell.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { grammarTopics } from "@/data/grammar.ts"
 import { lessons } from "@/data/lessons.ts"
+import { readings } from "@/data/readings.ts"
 import { topicTitle } from "@/data/vocabulary.ts"
 import {
   listMistakes,
@@ -24,6 +25,7 @@ const SOURCES: { value: MistakeSource | "all"; label: string }[] = [
   { value: "card", label: "閃卡" },
   { value: "grammar", label: "文法" },
   { value: "chat", label: "對話" },
+  { value: "reading", label: "閱讀" },
 ]
 
 const sourceLabel: Record<MistakeSource, string> = {
@@ -32,11 +34,13 @@ const sourceLabel: Record<MistakeSource, string> = {
   card: "閃卡",
   grammar: "文法",
   chat: "對話",
+  reading: "閱讀",
 }
 
 const topicOptions = [
   ...lessons.map((lesson) => ({ id: lesson.id, label: lesson.title })),
   ...grammarTopics.map((topic) => ({ id: topic.id, label: topic.title })),
+  ...readings.map((passage) => ({ id: passage.id, label: passage.titleZh })),
   { id: "free", label: "自由聊天" },
 ]
 
@@ -84,9 +88,9 @@ export function MistakeBookPage() {
     <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6">
       <BackHeader title="錯題本" detail={`${mistakeCount} 則`} />
       <p className="mt-4 text-sm leading-6 text-muted-foreground">
-        聽力答錯、發音低於 {SPEAK_MISTAKE_THRESHOLD} 分、閃卡按「忘記」，或文法答錯，會自動收進來。和 AI
-        對話時，也可以把改正的句子加進來。聽力答對、發音 {SPEAK_MASTERY_THRESHOLD}{" "}
-        分以上、閃卡按「記得」，或文法再答對，連續 {MASTERY_STREAK} 次就移出。
+        聽力答錯、發音低於 {SPEAK_MISTAKE_THRESHOLD} 分、閃卡按「忘記」、文法答錯，或閱讀理解答錯，會自動收進來。和
+        AI 對話時，也可以把改正的句子加進來。聽力答對、發音 {SPEAK_MASTERY_THRESHOLD}{" "}
+        分以上、閃卡按「記得」，或文法、閱讀再答對，連續 {MASTERY_STREAK} 次就移出。
       </p>
 
       <div className="mt-4 flex flex-wrap gap-2" role="radiogroup" aria-label="來源">

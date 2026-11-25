@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
+import { recordPractice } from "./activity-store.ts"
 import { useProgress } from "./progress-context.tsx"
+import { calendarDay } from "./progress.ts"
 import { recordGrammarAttempt, summarizeGrammar, type GrammarStats } from "./grammar.ts"
 import { loadGrammarStats, saveGrammarStats } from "./storage.ts"
 
@@ -17,6 +19,11 @@ export function GrammarProvider({ children }: { children: ReactNode }) {
 
   const record = useCallback(
     (topicId: string, correct: boolean) => {
+      recordPractice(calendarDay(new Date()), {
+        grammarAttempts: 1,
+        grammarCorrect: correct ? 1 : 0,
+        items: 1,
+      })
       setStats((prev) => {
         const next = recordGrammarAttempt(prev, topicId, correct)
         saveGrammarStats(next)

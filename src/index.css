@@ -89,6 +89,42 @@
   --sidebar-ring: oklch(0.55 0.07 196);
 }
 
+.dark {
+  --background: oklch(0.22 0.018 250);
+  --foreground: oklch(0.94 0.012 95);
+  --card: oklch(0.27 0.02 250);
+  --card-foreground: oklch(0.94 0.012 95);
+  --popover: oklch(0.29 0.02 250);
+  --popover-foreground: oklch(0.94 0.012 95);
+  --primary: oklch(0.74 0.09 196);
+  --primary-foreground: oklch(0.2 0.03 230);
+  --secondary: oklch(0.32 0.018 250);
+  --secondary-foreground: oklch(0.94 0.012 95);
+  --muted: oklch(0.32 0.016 250);
+  --muted-foreground: oklch(0.76 0.02 95);
+  --accent: oklch(0.34 0.03 80);
+  --accent-foreground: oklch(0.94 0.02 95);
+  --destructive: oklch(0.72 0.15 25);
+  --border: oklch(0.38 0.02 250);
+  --input: oklch(0.38 0.02 250);
+  --ring: oklch(0.74 0.09 196);
+  --good: oklch(0.76 0.13 155);
+  --speak: oklch(0.76 0.14 40);
+  --chart-1: oklch(0.76 0.09 196);
+  --chart-2: oklch(0.76 0.14 40);
+  --chart-3: oklch(0.82 0.11 85);
+  --chart-4: oklch(0.74 0.08 240);
+  --chart-5: oklch(0.76 0.12 155);
+  --sidebar: oklch(0.24 0.02 250);
+  --sidebar-foreground: oklch(0.94 0.012 95);
+  --sidebar-primary: oklch(0.74 0.09 196);
+  --sidebar-primary-foreground: oklch(0.2 0.03 230);
+  --sidebar-accent: oklch(0.32 0.016 250);
+  --sidebar-accent-foreground: oklch(0.94 0.012 95);
+  --sidebar-border: oklch(0.38 0.02 250);
+  --sidebar-ring: oklch(0.74 0.09 196);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -96,6 +132,9 @@
   html {
     @apply font-sans;
     color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
   }
   body {
     @apply text-foreground antialiased;
@@ -114,7 +153,41 @@
   ::selection {
     background: color-mix(in oklch, var(--primary) 24%, white);
   }
+  html.dark ::selection {
+    background: color-mix(in oklch, var(--primary) 35%, black);
+  }
 }
+
+/* Existing lesson chips and callouts use light pastel utilities. Keep them readable on the dark background. */
+.dark .bg-amber-50 { background-color: color-mix(in oklch, var(--speak) 16%, var(--card)); }
+.dark .bg-amber-100 { background-color: color-mix(in oklch, var(--chart-3) 28%, var(--card)); }
+.dark .text-amber-900,
+.dark .text-amber-950 { color: oklch(0.9 0.05 85); }
+.dark .border-amber-200 { border-color: color-mix(in oklch, var(--speak) 35%, var(--border)); }
+.dark .bg-orange-50 { background-color: color-mix(in oklch, var(--chart-2) 16%, var(--card)); }
+.dark .bg-orange-100 { background-color: color-mix(in oklch, var(--chart-2) 24%, var(--card)); }
+.dark .text-orange-900 { color: oklch(0.9 0.06 55); }
+.dark .border-orange-600 { border-color: var(--chart-2); }
+.dark .bg-sky-100 { background-color: color-mix(in oklch, var(--chart-4) 28%, var(--card)); }
+.dark .text-sky-900 { color: oklch(0.9 0.04 230); }
+.dark .bg-teal-100 { background-color: color-mix(in oklch, var(--primary) 24%, var(--card)); }
+.dark .text-teal-900 { color: oklch(0.9 0.04 190); }
+.dark .bg-rose-50 { background-color: color-mix(in oklch, var(--destructive) 16%, var(--card)); }
+.dark .bg-rose-100 { background-color: color-mix(in oklch, var(--destructive) 24%, var(--card)); }
+.dark .text-rose-800,
+.dark .text-rose-900 { color: oklch(0.9 0.06 20); }
+.dark .bg-violet-100 { background-color: color-mix(in oklch, var(--chart-4) 24%, var(--card)); }
+.dark .text-violet-900 { color: oklch(0.9 0.05 300); }
+.dark .bg-emerald-50,
+.dark .bg-emerald-100 { background-color: color-mix(in oklch, var(--good) 20%, var(--card)); }
+.dark .text-emerald-900 { color: oklch(0.9 0.06 155); }
+.dark .border-emerald-600 { border-color: var(--good); }
+.dark .bg-cyan-100 { background-color: color-mix(in oklch, var(--chart-1) 24%, var(--card)); }
+.dark .text-cyan-900 { color: oklch(0.9 0.05 200); }
+.dark .bg-indigo-100 { background-color: color-mix(in oklch, var(--chart-4) 30%, var(--card)); }
+.dark .text-indigo-900 { color: oklch(0.9 0.05 270); }
+.dark .bg-lime-100 { background-color: color-mix(in oklch, var(--good) 22%, var(--card)); }
+.dark .text-lime-900 { color: oklch(0.9 0.07 130); }
 
 .font-display {
   font-family: var(--font-display);

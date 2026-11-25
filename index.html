@@ -2,16 +2,35 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <link rel="apple-touch-icon" href="%BASE_URL%icons/apple-touch-icon.png" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <meta name="theme-color" content="#f4efe6" />
+    <script>
+      ;(function () {
+        try {
+          var stored = localStorage.getItem("tingshuo.theme.v1")
+          var preference = stored === "light" || stored === "dark" || stored === "system" ? stored : "system"
+          var dark =
+            preference === "dark" ||
+            (preference !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+          if (dark) document.documentElement.classList.add("dark")
+          document.documentElement.style.colorScheme = dark ? "dark" : "light"
+          var meta = document.querySelector('meta[name="theme-color"]')
+          if (meta) meta.setAttribute("content", dark ? "#1b2330" : "#f4efe6")
+        } catch (error) {
+          /* Storage can be blocked. The app still opens in the light theme. */
+        }
+      })()
+    </script>
     <meta
       name="description"
       content="給繁體中文使用者的英文聽力、發音、對話與文法練習。進度留在這台裝置。"
     />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="聽說" />
     <title>聽說 — 英文練習</title>
