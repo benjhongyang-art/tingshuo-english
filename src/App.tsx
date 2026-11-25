@@ -4,10 +4,12 @@ import { ListeningPractice } from "@/components/listening-practice.tsx"
 import { PronunciationPractice } from "@/components/pronunciation-practice.tsx"
 import { ProgressProvider } from "@/lib/progress-context.tsx"
 
+const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, "")
+
 export default function App() {
   return (
     <ProgressProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={routerBasename}>
         <Routes>
           <Route path="/" element={<HomeScreen />} />
           <Route path="/listen/:lessonId" element={<ListeningPractice />} />
