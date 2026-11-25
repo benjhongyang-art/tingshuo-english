@@ -1,8 +1,9 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { BookOpen, Briefcase, Flame, Layers, Mic, Plane, SunMedium, Utensils, Volume2 } from "lucide-react"
+import { BookOpen, Briefcase, Flame, Layers, MessageCircle, Mic, Plane, SpellCheck, SunMedium, Utensils, Volume2 } from "lucide-react"
 import { Button } from "@/components/ui/button.tsx"
 import { lessons, itemKey, getLesson, totalItemCount } from "@/data/lessons.ts"
+import { useGrammar } from "@/lib/grammar-context.tsx"
 import { countPracticed } from "@/lib/progress.ts"
 import { useProgress } from "@/lib/progress-context.tsx"
 import { useReview } from "@/lib/review-context.tsx"
@@ -28,6 +29,7 @@ const lessonIcon = {
 export function HomeScreen() {
   const navigate = useNavigate()
   const { state, summary } = useProgress()
+  const { summary: grammarSummary } = useGrammar()
   const { due, mistakeCount } = useReview()
   const recognition = canRecognizeSpeech()
   const last = loadLast()
@@ -35,7 +37,7 @@ export function HomeScreen() {
   const total = totalItemCount()
 
   useEffect(() => {
-    document.title = "聽說 — 英文聽力與發音"
+    document.title = "聽說 — 英文練習"
   }, [])
 
   return (
@@ -76,7 +78,7 @@ export function HomeScreen() {
         )}
       </section>
 
-      <section className="mt-4 grid gap-3 sm:grid-cols-2" aria-label="複習">
+      <section className="mt-4 grid gap-3 sm:grid-cols-2" aria-label="練習">
         <button
           type="button"
           onClick={() => navigate("/cards")}
@@ -113,9 +115,43 @@ export function HomeScreen() {
             </span>
           </span>
         </button>
+        <button
+          type="button"
+          onClick={() => navigate("/chat")}
+          className="rounded-[1.6rem] border bg-card p-4 text-left shadow-sm"
+        >
+          <span className="flex items-center gap-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-sky-100 text-sky-900">
+              <MessageCircle className="size-6" />
+            </span>
+            <span>
+              <span className="block text-lg font-semibold">英文對話</span>
+              <span className="mt-1 block text-sm leading-6 text-muted-foreground">
+                和 AI 練開口說。可打字，也可以用麥克風。
+              </span>
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/grammar")}
+          className="rounded-[1.6rem] border bg-card p-4 text-left shadow-sm"
+        >
+          <span className="flex items-center gap-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-teal-100 text-teal-900">
+              <SpellCheck className="size-6" />
+            </span>
+            <span>
+              <span className="block text-lg font-semibold">文法練習</span>
+              <span className="mt-1 block text-sm leading-6 text-muted-foreground">
+                時態、冠詞、介系詞。答錯會進錯題本。
+              </span>
+            </span>
+          </span>
+        </button>
       </section>
 
-      <section className="mt-4 grid grid-cols-3 gap-2 sm:gap-3" aria-label="練習進度">
+      <section className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3" aria-label="練習進度">
         <Stat label="已練" value={`${summary.practiced}`} unit={`共 ${total} 題`} />
         <Stat
           label="聽力"
@@ -123,9 +159,14 @@ export function HomeScreen() {
           unit="正確率"
         />
         <Stat label="發音" value={summary.speakAverage === null ? "—" : `${summary.speakAverage}`} unit="平均分" />
+        <Stat
+          label="文法"
+          value={grammarSummary.accuracy === null ? "—" : `${grammarSummary.accuracy}%`}
+          unit="正確率"
+        />
       </section>
 
-      {summary.practiced === 0 && (
+      {summary.practiced === 0 && grammarSummary.attempts === 0 && (
         <p className="mt-3 rounded-2xl bg-card px-4 py-3 text-sm leading-6 text-muted-foreground shadow-sm">
           還沒有練習紀錄。挑一個主題，從第一句開始就好。
         </p>
@@ -153,7 +194,7 @@ export function HomeScreen() {
         ))}
       </div>
       <p className="mt-8 text-center text-xs leading-5 text-muted-foreground">
-        進度只存在這台裝置的瀏覽器裡，不會上傳。
+        練習紀錄只存在這台瀏覽器裡，不會上傳。英文對話的 API 金鑰也只留在這台瀏覽器。
       </p>
     </div>
   )

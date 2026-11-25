@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest"
 import {
+  chatPhraseTarget,
+  collectChatPhrase,
   emptyMistakeBook,
   listMistakes,
   MASTERY_STREAK,
   mistakeCount,
+  mistakeId,
+  phraseKey,
   recordCardOutcome,
+  recordGrammarOutcome,
   recordListenOutcome,
   recordSpeakOutcome,
   removeMistake,
@@ -151,5 +156,51 @@ describe("mistake collection", () => {
     const removed = removeMistake(book, "lesson:greetings:g01")
     expect(mistakeCount(removed)).toBe(1)
     expect(removeMistake(removed, "missing")).toBe(removed)
+  })
+
+  it("collects a grammar miss and removes it after three correct reviews", () => {
+    const target: MistakeTarget = {
+      kind: "phrase",
+      topicId: "tenses",
+      refId: "tenses-01",
+      en: "I drink coffee every morning.",
+      zh: "主詞是 I，用原形。",
+      ipa: "",
+      note: "題目：I ___ coffee every morning.",
+    }
+    let book = recordGrammarOutcome(emptyMistakeBook(), target, false, today).book
+    expect(book.items[0]?.sources).toEqual(["grammar"])
+    for (let index = 0; index < MASTERY_STREAK - 1; index += 1) {
+      const step = recordGrammarOutcome(book, target, true, today)
+      expect(step.mastered).toBe(false)
+      book = step.book
+    }
+    const last = recordGrammarOutcome(book, target, true, today)
+    expect(last.mastered).toBe(true)
+    expect(mistakeCount(last.book)).toBe(0)
+  })
+
+  it("adds a corrected chat sentence once", () => {
+    const target = chatPhraseTarget({
+      topicId: "food",
+      correction: "I'd like a coffee, please.",
+      correctionZh: "請給我一杯咖啡。",
+      learnerText: "I want coffee",
+    })
+    expect(phraseKey("  I'd   like a coffee, please. ")).toBe(phraseKey("i'd like a coffee, please."))
+    expect(mistakeId(target)).toBe(`phrase:food:${phraseKey("I'd like a coffee, please.")}`)
+
+    const book = collectChatPhrase(emptyMistakeBook(), target, today)
+    expect(book.items[0]).toMatchObject({
+      sources: ["chat"],
+      kind: "phrase",
+      en: "I'd like a coffee, please.",
+      zh: "請給我一杯咖啡。",
+      note: "你說：I want coffee",
+      wrongCount: 1,
+    })
+    expect(collectChatPhrase(book, target, today)).toBe(book)
+    expect(listMistakes(book, { source: "chat" })).toHaveLength(1)
+    expect(listMistakes(book, { source: "grammar" })).toHaveLength(0)
   })
 })

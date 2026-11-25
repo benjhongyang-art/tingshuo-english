@@ -2,11 +2,13 @@ import { useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { BackHeader } from "@/components/practice-shell.tsx"
 import { Button } from "@/components/ui/button.tsx"
+import { grammarTopics } from "@/data/grammar.ts"
 import { lessons } from "@/data/lessons.ts"
 import { topicTitle } from "@/data/vocabulary.ts"
 import {
   listMistakes,
   MASTERY_STREAK,
+  parseMistakeSource,
   SPEAK_MASTERY_THRESHOLD,
   SPEAK_MISTAKE_THRESHOLD,
   type MistakeEntry,
@@ -20,25 +22,37 @@ const SOURCES: { value: MistakeSource | "all"; label: string }[] = [
   { value: "listen", label: "聽力" },
   { value: "speak", label: "發音" },
   { value: "card", label: "閃卡" },
+  { value: "grammar", label: "文法" },
+  { value: "chat", label: "對話" },
 ]
 
 const sourceLabel: Record<MistakeSource, string> = {
   listen: "聽力",
   speak: "發音",
   card: "閃卡",
+  grammar: "文法",
+  chat: "對話",
 }
 
-function readSource(value: string | null): MistakeSource | "all" {
-  if (value === "listen" || value === "speak" || value === "card") return value
-  return "all"
+const topicOptions = [
+  ...lessons.map((lesson) => ({ id: lesson.id, label: lesson.title })),
+  ...grammarTopics.map((topic) => ({ id: topic.id, label: topic.title })),
+  { id: "free", label: "自由聊天" },
+]
+
+const topicIds = new Set(topicOptions.map((item) => item.id))
+
+function topicLabel(topicId: string): string {
+  return topicOptions.find((item) => item.id === topicId)?.label ?? topicTitle(topicId)
 }
 
 export function MistakeBookPage() {
   const navigate = useNavigate()
   const { mistakes, mistakeCount, dismissMistake } = useReview()
   const [params, setParams] = useSearchParams()
-  const source = readSource(params.get("source"))
-  const topicId = lessons.some((lesson) => lesson.id === params.get("topic")) ? (params.get("topic") ?? "all") : "all"
+  const source = parseMistakeSource(params.get("source"))
+  const topicParam = params.get("topic")
+  const topicId = topicParam && topicIds.has(topicParam) ? topicParam : "all"
   const shown = listMistakes(mistakes, { source, topicId })
 
   useEffect(() => {
@@ -70,8 +84,9 @@ export function MistakeBookPage() {
     <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6">
       <BackHeader title="錯題本" detail={`${mistakeCount} 則`} />
       <p className="mt-4 text-sm leading-6 text-muted-foreground">
-        聽力答錯、發音低於 {SPEAK_MISTAKE_THRESHOLD} 分，或閃卡按「忘記」，會自動收進來。聽力答對、發音{" "}
-        {SPEAK_MASTERY_THRESHOLD} 分以上，或閃卡按「記得」，連續 {MASTERY_STREAK} 次就移出。
+        聽力答錯、發音低於 {SPEAK_MISTAKE_THRESHOLD} 分、閃卡按「忘記」，或文法答錯，會自動收進來。和 AI
+        對話時，也可以把改正的句子加進來。聽力答對、發音 {SPEAK_MASTERY_THRESHOLD}{" "}
+        分以上、閃卡按「記得」，或文法再答對，連續 {MASTERY_STREAK} 次就移出。
       </p>
 
       <div className="mt-4 flex flex-wrap gap-2" role="radiogroup" aria-label="來源">
@@ -85,9 +100,9 @@ export function MistakeBookPage() {
         <FilterChip selected={topicId === "all"} onClick={() => update({ topic: "all" })}>
           全部主題
         </FilterChip>
-        {lessons.map((lesson) => (
-          <FilterChip key={lesson.id} selected={topicId === lesson.id} onClick={() => update({ topic: lesson.id })}>
-            {lesson.title}
+        {topicOptions.map((topic) => (
+          <FilterChip key={topic.id} selected={topicId === topic.id} onClick={() => update({ topic: topic.id })}>
+            {topic.label}
           </FilterChip>
         ))}
       </div>
@@ -109,7 +124,7 @@ export function MistakeBookPage() {
 
       {mistakeCount === 0 ? (
         <p className="mt-6 rounded-2xl bg-card px-4 py-4 text-sm leading-6 text-muted-foreground shadow-sm">
-          還沒有錯題。練聽力、發音或單字時，沒記住的句子會出現在這裡。
+          還沒有錯題。練聽力、發音、單字或文法時，沒記住的句子會出現在這裡。
         </p>
       ) : shown.length === 0 ? (
         <p className="mt-6 rounded-2xl bg-card px-4 py-4 text-sm leading-6 text-muted-foreground shadow-sm">
@@ -145,7 +160,7 @@ function MistakeCard({
             {sourceLabel[item]}
           </span>
         ))}
-        <span className="text-xs text-muted-foreground">{topicTitle(entry.topicId)}</span>
+        <span className="text-xs text-muted-foreground">{topicLabel(entry.topicId)}</span>
       </div>
       <p lang="en" className="mt-3 font-display text-2xl leading-tight">
         {entry.en}

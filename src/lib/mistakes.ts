@@ -1,9 +1,15 @@
 import type { ReviewRating } from "./srs.ts"
 
-export type MistakeSource = "listen" | "speak" | "card"
+export const MISTAKE_SOURCES = ["listen", "speak", "card", "grammar", "chat"] as const
+
+export type MistakeSource = (typeof MISTAKE_SOURCES)[number]
+
+export const MISTAKE_KINDS = ["lesson", "card", "phrase"] as const
+
+export type MistakeKind = (typeof MISTAKE_KINDS)[number]
 
 export type MistakeTarget = {
-  kind: "lesson" | "card"
+  kind: MistakeKind
   topicId: string
   refId: string
   en: string
@@ -16,7 +22,7 @@ export type MistakeEntry = {
   id: string
   sources: MistakeSource[]
   topicId: string
-  kind: "lesson" | "card"
+  kind: MistakeKind
   refId: string
   en: string
   zh: string
@@ -45,14 +51,53 @@ export const SPEAK_MASTERY_THRESHOLD = 80
 /** Correct reviews in a row before an item leaves the notebook. */
 export const MASTERY_STREAK = 3
 
-const SOURCE_ORDER: MistakeSource[] = ["listen", "speak", "card"]
+const SOURCE_ORDER: readonly MistakeSource[] = MISTAKE_SOURCES
 
 export function emptyMistakeBook(): MistakeBook {
   return { items: [] }
 }
 
 export function mistakeId(target: Pick<MistakeTarget, "kind" | "topicId" | "refId">): string {
-  return target.kind === "lesson" ? `lesson:${target.topicId}:${target.refId}` : `card:${target.refId}`
+  if (target.kind === "lesson") return `lesson:${target.topicId}:${target.refId}`
+  if (target.kind === "card") return `card:${target.refId}`
+  return `phrase:${target.topicId}:${target.refId}`
+}
+
+export function isMistakeSource(value: unknown): value is MistakeSource {
+  return typeof value === "string" && (MISTAKE_SOURCES as readonly string[]).includes(value)
+}
+
+export function parseMistakeSource(value: string | null | undefined): MistakeSource | "all" {
+  return isMistakeSource(value) ? value : "all"
+}
+
+/** Stable id for a corrected sentence, so the same phrase is not collected twice. */
+export function phraseKey(text: string): string {
+  const normalized = text.trim().toLowerCase().replace(/\s+/g, " ")
+  let hash = 2166136261
+  for (let index = 0; index < normalized.length; index += 1) {
+    hash ^= normalized.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return (hash >>> 0).toString(36)
+}
+
+export function chatPhraseTarget(input: {
+  topicId: string
+  correction: string
+  correctionZh: string | null
+  learnerText: string
+}): MistakeTarget {
+  const correction = input.correction.trim()
+  return {
+    kind: "phrase",
+    topicId: input.topicId,
+    refId: phraseKey(correction),
+    en: correction,
+    zh: input.correctionZh?.trim() || "對話裡改正的句子",
+    ipa: "",
+    note: learnerNote(input.learnerText),
+  }
 }
 
 export function mistakeCount(book: MistakeBook): number {
@@ -108,6 +153,31 @@ export function recordSpeakOutcome(
   if (safe < SPEAK_MISTAKE_THRESHOLD) return { book: markWrong(book, target, "speak", today), mastered: false }
   if (safe >= SPEAK_MASTERY_THRESHOLD) return markCorrect(book, target, today)
   return { book, mastered: false }
+}
+
+export function recordGrammarOutcome(
+  book: MistakeBook,
+  target: MistakeTarget,
+  correct: boolean,
+  today: string,
+): MistakeResult {
+  const phrase: MistakeTarget = { ...target, kind: "phrase", ipa: target.ipa ?? "" }
+  if (!correct) return { book: markWrong(book, phrase, "grammar", today), mastered: false }
+  return markCorrect(book, phrase, today)
+}
+
+/** Saves a tutor correction once. A second save of the same sentence does nothing. */
+export function collectChatPhrase(book: MistakeBook, target: MistakeTarget, today: string): MistakeBook {
+  const phrase: MistakeTarget = {
+    ...target,
+    kind: "phrase",
+    en: target.en.trim(),
+    zh: target.zh.trim() || "對話裡改正的句子",
+    ipa: target.ipa ?? "",
+  }
+  if (!phrase.en) return book
+  if (book.items.some((item) => item.id === mistakeId(phrase))) return book
+  return markWrong(book, phrase, "chat", today)
 }
 
 export function recordCardOutcome(
@@ -171,6 +241,13 @@ function contentOf(target: MistakeTarget): Omit<MistakeEntry, "id" | "sources" |
     ipa: target.ipa,
     note: target.note ?? "",
   }
+}
+
+function learnerNote(text: string): string {
+  const trimmed = text.trim().replace(/\s+/g, " ")
+  if (!trimmed) return ""
+  const short = trimmed.length > 160 ? `${trimmed.slice(0, 159)}…` : trimmed
+  return `你說：${short}`
 }
 
 function withSource(sources: MistakeSource[], source: MistakeSource): MistakeSource[] {
